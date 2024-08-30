@@ -1,0 +1,287 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  latitude  Float?
+  longitude Float?
+
+  Booking Booking[]
+  Feedback Feedback[]
+  Review Review[]
+  Restaurant Restaurant[]
+  Order Order[]
+  Reward Reward[]
+  BookingRide BookingRide[]
+  Rating Rating[] @relation("Rater")
+  UserBehavior UserBehavior[]
+  Ride Ride[]
+}
+
+model Worker {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  role      String   // 'driver' or 'rider'
+  latitude  Float?
+  longitude Float?
+
+  Driver Driver[]
+  Rating Rating[] @relation("Ratee")
+}
+
+model Room {
+  id          Int       @id @default(autoincrement())
+  number      Int       @unique
+  availability Boolean  @default(true)
+  bookings    Booking[]
+  Review Review[]
+  RoomFacility RoomFacility[]
+  Event Event[]
+}
+
+model Booking {
+  id     Int    @id @default(autoincrement())
+  userId Int
+  roomId Int
+  startDate DateTime
+  endDate   DateTime
+  User   User   @relation(fields: [userId], references: [id])
+  Room   Room   @relation(fields: [roomId], references: [id])
+  BookingFare BookingFare[]
+}
+
+model Feedback {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  content   String
+  createdAt DateTime @default(now())
+  User      User     @relation(fields: [userId], references: [id])
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  roomId    Int
+  rating    Int
+  comment   String
+  createdAt DateTime @default(now())
+  User      User     @relation(fields: [userId], references: [id])
+  Room      Room     @relation(fields: [roomId], references: [id])
+}
+
+model Facility {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String
+  rooms       RoomFacility[]
+}
+
+model RoomFacility {
+  roomId      Int
+  facilityId  Int
+  Room        Room     @relation(fields: [roomId], references: [id])
+  Facility    Facility @relation(fields: [facilityId], references: [id])
+  @@id([roomId, facilityId])
+}
+
+model Event {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String
+  date        DateTime
+  roomId      Int
+  Room        Room     @relation(fields: [roomId], references: [id])
+}
+
+model Restaurant {
+  id      Int      @id @default(autoincrement())
+  name    String
+  address String
+  userId  Int
+  user    User     @relation(fields: [userId], references: [id])
+  menu    MenuItem[]
+}
+
+model MenuItem {
+  id           Int      @id @default(autoincrement())
+  name         String
+  description  String
+  price        Float
+  restaurantId Int
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  Order Order[]
+}
+
+model Order {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  totalAmount Float
+  menuItemId  Int
+  menuItem    MenuItem @relation(fields: [menuItemId], references: [id])
+  status      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  Delivery Delivery[]
+  Payment Payment[]
+}
+
+model DeliveryPersonnel {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  deliveries Delivery[]
+}
+
+model Delivery {
+  id                  Int                @id @default(autoincrement())
+  orderId             Int
+  order               Order              @relation(fields: [orderId], references: [id])
+  deliveryPersonnelId Int
+  deliveryPersonnel   DeliveryPersonnel  @relation(fields: [deliveryPersonnelId], references: [id])
+  status              String
+  location            String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+}
+
+model Reward {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  points    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Driver {
+   id           String   @id @default(uuid()) @db.Uuid
+  workerId      String
+  name         String
+  vehicle      String
+  latitude     Float?
+  longitude    Float?
+  licenseNumber String
+  bookings     BookingRide[]
+  worker   Worker @relation(fields: [workerId],references: [id])
+  Ride Ride[]
+  DriverPerformance DriverPerformance[]
+}
+
+model BookingRide {
+  id             String  @id @default(uuid()) @db.Uuid
+  userId         Int
+  driverId       String @db.Uuid
+  pickupLocation String
+  dropoffLocation String
+  status         String
+  user   User   @relation(fields: [userId], references: [id])
+  driver Driver @relation(fields: [driverId], references: [id])
+}
+
+model Ride {
+  id            String   @id @default(uuid())
+  riderId       String
+  driverId      String  @db.Uuid
+  pickupLat     Float
+  pickupLong    Float
+  dropoffLat    Float
+  dropoffLong   Float
+  status        String   // 'ongoing', 'completed'
+  estimatedTime Int
+  driver Driver @relation(fields: [driverId], references: [id])
+
+  User User[]
+}
+
+model Fare {
+  id                Int      @id @default(autoincrement())
+  baseFare          Float
+  perKmRate         Float
+  surgeMultiplier   Float
+  demandFactor      Float
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model BookingFare {
+  id            Int      @id @default(autoincrement())
+  bookingId     Int      @unique
+  distance      Float
+  demand        Float
+  surgeFactor   Float
+  fare          Float
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  Booking       Booking @relation(fields: [bookingId], references: [id])
+}
+
+model Payment {
+  id            Int       @id @default(autoincrement())
+  amount        Float
+  method        String    // 'UPI', 'Credit Card', 'Digital Wallet', 'Cash'
+  status        String    // 'Pending', 'Completed', 'Failed'
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  orderId       Int
+  order         Order     @relation(fields: [orderId], references: [id])
+}
+
+model Rating {
+  id         Int      @id @default(autoincrement())
+  raterId    Int
+  rater      User     @relation("Rater", fields: [raterId], references: [id])
+  rateeId    String
+  ratee      Worker     @relation("Ratee", fields: [rateeId], references: [id])
+  rating     Int
+  comment    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([raterId, rateeId], name: "rater_ratee_index")
+}
+
+model UserBehavior {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  action      String   // e.g., Search, Book, Cancel
+  timestamp   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model DriverPerformance {
+  id          Int      @id @default(autoincrement())
+  driverId    String  @db.Uuid
+  rating      Float
+  completedRides Int
+  feedback    String? // Optional feedback
+  timestamp   DateTime @default(now())
+  driver      Driver   @relation(fields: [driverId], references: [id])
+}
+
+model Cache {
+  id     Int      @id @default(autoincrement())
+  key    String   @unique
+  value  String
+  expiry DateTime
+}
