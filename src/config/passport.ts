@@ -60,7 +60,7 @@ passport.use(
     {
       clientID: GOOGLE_CLIENT_ID,
       clientSecret: GOOGLE_CLIENT_SECRET,
-      callbackURL: process.env.NODE_ENV === 'production' ? "www.shelteric.com" : "http://localhost:3000/home", 
+      callbackURL: process.env.NODE_ENV === 'production' ? "https://www.shelteric.com" : "http://localhost:3000/home", 
       scope: ['profile', 'email'],
     },
     async (_accessToken: string, _refreshToken: string, profile: passport.Profile, done: (err: Error | null, user?: PrismaUser | false, info?: { message: string }) => void) => {
