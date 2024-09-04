@@ -6,7 +6,7 @@ import { PrismaClient, User as PrismaUser } from '@prisma/client';
 import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
-import { User as ExtendedUser } from '../types/user'; // Import the extended User type
+import { ExtendedUser } from '../types/user'; // Import the extended User type
 
 dotenv.config();
 
@@ -43,19 +43,24 @@ passport.use(
         const userWithToken: ExtendedUser = { ...user, token };
         return done(null, userWithToken);
       } catch (err) {
-        console.error('Error in LocalStrategy:', err);
-        return done(err);
+        if (err instanceof Error) {
+          console.error('Error in LocalStrategy:', err);
+          return done(err);
+        } else {
+          return done(new Error('An unknown error occurred'));
+        }
       }
     }
   )
 );
 
+// Google Strategy for OAuth2 authentication
 passport.use(
   new GoogleStrategy(
     {
       clientID: GOOGLE_CLIENT_ID,
       clientSecret: GOOGLE_CLIENT_SECRET,
-      callbackURL: "http://localhost:3000/home",
+      callbackURL: process.env.NODE_ENV === 'production' ? "www.shelteric.com" : "http://localhost:3000/home", 
       scope: ['profile', 'email'],
     },
     async (_accessToken: string, _refreshToken: string, profile: passport.Profile, done: (err: Error | null, user?: PrismaUser | false, info?: { message: string }) => void) => {
@@ -73,30 +78,40 @@ passport.use(
           return done(null, result);
         }
       } catch (err) {
-        console.error('Error in GoogleStrategy:', err);
-        return done(err, false);
+        if (err instanceof Error) {
+          console.error('Error in GoogleStrategy:', err);
+          return done(err, false);
+        } else {
+          return done(new Error('An unknown error occurred'), false);
+        }
       }
     }
   )
 );
 
+
 // Serialize user for session
-passport.serializeUser((user: ExtendedUser, done: (err: Error | null, id?: number) => void) => {
+passport.serializeUser((user: PrismaUser, done) => {
   done(null, user.id);
 });
 
 // Deserialize user from session
-passport.deserializeUser(async (id: number, done: (err: Error | null, user?: PrismaUser | false) => void) => {
+passport.deserializeUser(async (id: number, done) => {
   try {
     const user = await prisma.user.findUnique({ where: { id } });
     if (user) {
-      done(null, user);
+      const userWithToken: ExtendedUser = { ...user, token: jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: '1h' }) };
+      done(null, userWithToken);
     } else {
       done(null, false);
     }
   } catch (err) {
-    console.error('Error in deserializeUser:', err);
-    done(err);
+    if (err instanceof Error) {
+      console.error('Error in deserializeUser:', err);
+      done(err);
+    } else {
+      done(new Error('An unknown error occurred'));
+    }
   }
 });
 
@@ -107,7 +122,7 @@ passport.use(
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: JWT_SECRET,
     },
-    async (jwtPayload: JwtPayload, done: (err: Error | null, user?: PrismaUser | false, info?: { message: string }) => void) => {
+    async (jwtPayload: JwtPayload, done) => {
       try {
         const user = await prisma.user.findUnique({ where: { id: jwtPayload.id } });
         if (user) {
@@ -116,13 +131,18 @@ passport.use(
           return done(null, false, { message: 'User not found.' });
         }
       } catch (err) {
-        console.error('Error in JwtStrategy:', err);
-        return done(err, false);
+        if (err instanceof Error) {
+          console.error('Error in JwtStrategy:', err);
+          return done(err, false);
+        } else {
+          return done(new Error('An unknown error occurred'), false);
+        }
       }
     }
   )
 );
 
+// Export a function to generate JWT tokens
 export const generateToken = (user: { id: number }) => {
   return jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: '1h' });
 };
