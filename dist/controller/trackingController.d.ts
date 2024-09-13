@@ -1,4 +1,5 @@
-import { Request, Response } from 'express';
-export declare const trackDriverLocation: (req: Request, res: Response) => Promise<Response>;
-export declare const trackRiderLocation: (req: Request, res: Response) => Promise<Response>;
-export declare const getEstimatedETA: (req: Request, res: Response) => Promise<Response>;
+/// <reference types="qs" />
+import { Request, Response, NextFunction } from 'express';
+export declare const trackDriverLocation: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response<any, Record<string, any>>, next: NextFunction) => Promise<void>;
+export declare const trackRiderLocation: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response<any, Record<string, any>>, next: NextFunction) => Promise<void>;
+export declare const getETA: (req: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, res: Response<any, Record<string, any>>, next: NextFunction) => Promise<void>;

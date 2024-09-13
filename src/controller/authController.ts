@@ -103,6 +103,8 @@ export const logout = async (req: Request, res: Response) => {
         console.error('Error in logout:', err);
         return res.status(500).json({ message: 'Logout failed', error: (err as Error).message });
       }
+
+      // Successful logout response
       return res.status(200).json({ message: 'Logged out successfully' });
     });
   } catch (error) {
@@ -110,6 +112,8 @@ export const logout = async (req: Request, res: Response) => {
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 };
+
+
 // Get user profile
 export const getUserProfile = async (req: AuthenticatedRequest, res: Response) => {
   try {

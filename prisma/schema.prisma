@@ -32,6 +32,8 @@ model User {
   Rating Rating[] @relation("Rater")
   UserBehavior UserBehavior[]
   Ride Ride[]
+
+  Cart Cart[]
 }
 
 model Worker {
@@ -130,6 +132,10 @@ model MenuItem {
   restaurantId Int
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
   Order Order[]
+
+  CartItem CartItem[]
+
+  OrderItem OrderItem[]
 }
 
 model Order {
@@ -144,6 +150,8 @@ model Order {
   updatedAt   DateTime @updatedAt
   Delivery Delivery[]
   Payment Payment[]
+
+  OrderItem OrderItem[]
 }
 
 model DeliveryPersonnel {
@@ -284,4 +292,29 @@ model Cache {
   key    String   @unique
   value  String
   expiry DateTime
+}
+
+model Cart {
+  id     Int        @id @default(autoincrement())
+  userId Int
+  user   User       @relation(fields: [userId], references: [id])
+  items  CartItem[]
+  status String     @default("Active")
+}
+
+model CartItem {
+  id         Int      @id @default(autoincrement())
+  cartId     Int
+  cart       Cart     @relation(fields: [cartId], references: [id])
+  menuItemId Int
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+  quantity   Int
+}
+model OrderItem {
+  id          Int      @id @default(autoincrement())
+  orderId     Int
+  order       Order    @relation(fields: [orderId], references: [id])
+  menuItemId  Int
+  menuItem    MenuItem @relation(fields: [menuItemId], references: [id])
+  quantity    Int
 }

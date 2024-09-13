@@ -1,83 +1,72 @@
-import { Request, Response } from 'express';
-import { validationResult } from 'express-validator';
-import { trackDriver, trackRider } from '../services/trackingService';
-import { Client } from '@googlemaps/google-maps-services-js';
-import dotenv from 'dotenv';
-
-dotenv.config();
-
-const client = new Client({});
+import { Request, Response, NextFunction } from 'express';
+import { trackDriver, trackRider, getETA as getETAFromService } from '../services/trackingService';
+import { handleValidationErrors } from '../utils/errorHandlers';
 
 // Track driver location
-export const trackDriverLocation = async (req: Request, res: Response): Promise<Response> => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
+export const trackDriverLocation = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  if (!handleValidationErrors(req, res)) return;
 
   try {
     const { latitude, longitude } = req.body;
-    const driverId = req.params.id; // Keep id as a string
+    const driverId = req.params.id;
+
+    // Validate latitude and longitude
+    if (typeof latitude !== 'number' || typeof longitude !== 'number') {
+      res.status(400).json({ message: 'Invalid latitude or longitude format' });
+      return;
+    }
+
     const driver = await trackDriver(driverId, latitude, longitude);
-    return res.status(200).json(driver);
+    res.status(200).json(driver);
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    next(error); // Pass error to the error-handling middleware
   }
 };
 
 // Track rider location
-export const trackRiderLocation = async (req: Request, res: Response): Promise<Response> => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
+export const trackRiderLocation = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  if (!handleValidationErrors(req, res)) return;
 
   try {
     const { latitude, longitude } = req.body;
-    const riderId = parseInt(req.params.id, 10); // Convert id to number
+    const riderId = parseInt(req.params.id, 10);
+
+    // Validate rider ID and coordinates
     if (isNaN(riderId)) {
-      return res.status(400).json({ message: 'Invalid ID format' });
+      res.status(400).json({ message: 'Invalid rider ID format' });
+      return;
     }
+    if (typeof latitude !== 'number' || typeof longitude !== 'number') {
+      res.status(400).json({ message: 'Invalid latitude or longitude format' });
+      return;
+    }
+
     const rider = await trackRider(riderId, latitude, longitude);
-    return res.status(200).json(rider);
+    res.status(200).json(rider);
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    next(error); // Pass error to the error-handling middleware
   }
 };
 
-// Get ETA (Estimated Time of Arrival) using Google Distance Matrix API
-export const getEstimatedETA = async (req: Request, res: Response): Promise<Response> => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
+// Get ETA
+export const getETA = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  if (!handleValidationErrors(req, res)) return;
 
   try {
     const { pickupLat, pickupLong, dropoffLat, dropoffLong } = req.body;
 
-    // Retrieve the Google API key
-    const googleApiKey = process.env.GOOGLE_KEY;
-    if (!googleApiKey) {
-      return res.status(500).json({ message: 'Google API key not set' });
+    // Validate coordinates
+    if (
+      typeof pickupLat !== 'number' || typeof pickupLong !== 'number' ||
+      typeof dropoffLat !== 'number' || typeof dropoffLong !== 'number'
+    ) {
+      res.status(400).json({ message: 'Invalid coordinate format' });
+      return;
     }
 
-    // Call Google Distance Matrix API
-    const response = await client.distancematrix({
-      params: {
-        origins: [{ lat: pickupLat, lng: pickupLong }],
-        destinations: [{ lat: dropoffLat, lng: dropoffLong }],
-        key: googleApiKey,
-      },
-    });
-
-    // Check if the response is OK and extract the duration (in seconds)
-    if (response.data.rows[0].elements[0].status === 'OK') {
-      const duration = response.data.rows[0].elements[0].duration.value; // Duration in seconds
-      return res.status(200).json({ eta: duration });
-    } else {
-      throw new Error('Unable to calculate ETA');
-    }
+    const eta = await getETAFromService(pickupLat, pickupLong, dropoffLat, dropoffLong);
+    res.status(200).json({ eta });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    next(error); // Pass error to the error-handling middleware
   }
 };
