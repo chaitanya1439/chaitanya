@@ -9,9 +9,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.logDriverPerformance = exports.logUserBehavior = exports.logRide = void 0;
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
-exports.logRide = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const logRide = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { riderId, driverId, pickupLat, pickupLong, dropoffLat, dropoffLong, status, estimatedTime } = req.body;
     try {
         const ride = yield prisma.ride.create({
@@ -32,7 +33,8 @@ exports.logRide = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         res.status(500).json({ error: error.message });
     }
 });
-exports.logUserBehavior = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.logRide = logRide;
+const logUserBehavior = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { userId, action } = req.body;
     try {
         const behavior = yield prisma.userBehavior.create({
@@ -47,7 +49,8 @@ exports.logUserBehavior = (req, res) => __awaiter(void 0, void 0, void 0, functi
         res.status(500).json({ error: error.message });
     }
 });
-exports.logDriverPerformance = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.logUserBehavior = logUserBehavior;
+const logDriverPerformance = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { driverId, rating, completedRides, feedback } = req.body;
     try {
         const performance = yield prisma.driverPerformance.create({
@@ -64,3 +67,4 @@ exports.logDriverPerformance = (req, res) => __awaiter(void 0, void 0, void 0, f
         res.status(500).json({ error: error.message });
     }
 });
+exports.logDriverPerformance = logDriverPerformance;

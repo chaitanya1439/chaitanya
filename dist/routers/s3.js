@@ -22,8 +22,8 @@ const s3_presigned_post_1 = require("@aws-sdk/s3-presigned-post");
 const client_1 = require("@prisma/client");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const prisma = new client_1.PrismaClient();
-const router = express_1.Router();
-const upload = multer_1.default();
+const router = (0, express_1.Router)();
+const upload = (0, multer_1.default)();
 const JWT_SECRET = process.env.JWT_SECRET;
 // Ensure JWT_SECRET is defined
 if (!JWT_SECRET) {
@@ -59,7 +59,7 @@ router.get('/presignedUrl', authenticate_1.authMiddleware, (req, res) => __await
         return res.status(401).json({ message: 'User not authenticated' });
     }
     try {
-        const { url, fields } = yield s3_presigned_post_1.createPresignedPost(s3Client, {
+        const { url, fields } = yield (0, s3_presigned_post_1.createPresignedPost)(s3Client, {
             Bucket: BUCKET_NAME,
             Key: `auth/${userId}/${Math.random()}/image.png`,
             Conditions: [['content-length-range', 0, 5 * 1024 * 1024]],

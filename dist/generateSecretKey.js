@@ -1,8 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const crypto_1 = require("crypto");
+// Function to generate a secure random secret key
 const generateSecretKey = () => {
-    return crypto_1.randomBytes(64).toString('hex');
+    return (0, crypto_1.randomBytes)(64).toString('hex');
 };
 // Generate secrets for JWT and session
 const jwtSecretKey = generateSecretKey();

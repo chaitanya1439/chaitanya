@@ -12,6 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.updateUserProfile = exports.getUserProfile = exports.logout = exports.login = exports.register = void 0;
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const passport_1 = require("../config/passport");
 const client_1 = require("@prisma/client");
@@ -25,7 +26,7 @@ const userSchema = zod_1.z.object({
     name: zod_1.z.string().optional(),
 });
 // Register a new user
-exports.register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const parsedData = userSchema.parse(req.body);
         const { email, password, name } = parsedData;
@@ -41,7 +42,7 @@ exports.register = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
                 name,
             },
         });
-        const token = passport_1.generateToken(createdUser);
+        const token = (0, passport_1.generateToken)(createdUser);
         return res.status(201).json({
             message: 'User registered successfully',
             user: Object.assign(Object.assign({}, createdUser), { password: undefined }),
@@ -56,8 +57,9 @@ exports.register = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         return res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+exports.register = register;
 // Login a user
-exports.login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const loginSchema = zod_1.z.object({
         email: zod_1.z.string().email(),
         password: zod_1.z.string().min(8),
@@ -68,7 +70,7 @@ exports.login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         if (!user || !(yield bcrypt_1.default.compare(password, user.password))) {
             return res.status(401).json({ message: 'Invalid email or password' });
         }
-        const token = passport_1.generateToken(user);
+        const token = (0, passport_1.generateToken)(user);
         return res.status(200).json({
             message: 'Login successful',
             user: Object.assign(Object.assign({}, user), { password: undefined }),
@@ -83,8 +85,9 @@ exports.login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         return res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+exports.login = login;
 // Logout a user
-exports.logout = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const logout = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
         // Invalidate the token if you're storing it in a database or cache
@@ -105,6 +108,7 @@ exports.logout = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 console.error('Error in logout:', err);
                 return res.status(500).json({ message: 'Logout failed', error: err.message });
             }
+            // Successful logout response
             return res.status(200).json({ message: 'Logged out successfully' });
         });
     }
@@ -113,8 +117,9 @@ exports.logout = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         return res.status(500).json({ message: 'Internal Server Error' });
     }
 });
+exports.logout = logout;
 // Get user profile
-exports.getUserProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getUserProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _b;
     try {
         const userId = (_b = req.user) === null || _b === void 0 ? void 0 : _b.id;
@@ -135,8 +140,9 @@ exports.getUserProfile = (req, res) => __awaiter(void 0, void 0, void 0, functio
         return res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+exports.getUserProfile = getUserProfile;
 // Update user profile
-exports.updateUserProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const updateUserProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _c;
     const updateSchema = zod_1.z.object({
         name: zod_1.z.string().min(1, { message: 'Name is required' }),
@@ -161,3 +167,4 @@ exports.updateUserProfile = (req, res) => __awaiter(void 0, void 0, void 0, func
         return res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+exports.updateUserProfile = updateUserProfile;

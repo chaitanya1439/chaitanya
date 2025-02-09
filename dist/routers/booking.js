@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const bookingController_1 = require("../controller/bookingController");
 const authenticate_1 = require("../middleware/authenticate");
-const router = express_1.Router();
+const router = (0, express_1.Router)();
 router.get('/available-rooms', authenticate_1.authenticate, bookingController_1.getAvailableRooms);
 router.post('/book-room', authenticate_1.authenticate, bookingController_1.bookRoom);
 router.post('/cancel-booking', authenticate_1.authenticate, bookingController_1.cancelBooking);

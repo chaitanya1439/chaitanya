@@ -16,7 +16,7 @@ const express_1 = require("express");
 const zod_1 = require("zod");
 const client_1 = require("@prisma/client");
 const stripe_1 = __importDefault(require("stripe"));
-const router = express_1.Router();
+const router = (0, express_1.Router)();
 const prisma = new client_1.PrismaClient();
 const stripeClient = new stripe_1.default('YOUR_STRIPE_SECRET_KEY', { apiVersion: '2024-06-20' }); // Update the API version here
 // Schema validation using Zod

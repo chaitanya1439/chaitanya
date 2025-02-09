@@ -9,9 +9,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.getMenuItems = exports.addMenuItem = exports.getRestaurants = exports.createRestaurant = void 0;
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
-exports.createRestaurant = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const createRestaurant = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const { name, address } = req.body;
     const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
@@ -32,7 +33,8 @@ exports.createRestaurant = (req, res) => __awaiter(void 0, void 0, void 0, funct
         return res.status(500).json({ error: error.message });
     }
 });
-exports.getRestaurants = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.createRestaurant = createRestaurant;
+const getRestaurants = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _b;
     const userId = (_b = req.user) === null || _b === void 0 ? void 0 : _b.id;
     if (!userId) {
@@ -49,7 +51,8 @@ exports.getRestaurants = (req, res) => __awaiter(void 0, void 0, void 0, functio
         return res.status(500).json({ error: error.message });
     }
 });
-exports.addMenuItem = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.getRestaurants = getRestaurants;
+const addMenuItem = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { restaurantId, name, description, price } = req.body;
     try {
         const menuItem = yield prisma.menuItem.create({
@@ -66,7 +69,8 @@ exports.addMenuItem = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         return res.status(500).json({ error: error.message });
     }
 });
-exports.getMenuItems = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.addMenuItem = addMenuItem;
+const getMenuItems = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { restaurantId } = req.params;
     try {
         const menuItems = yield prisma.menuItem.findMany({
@@ -78,3 +82,4 @@ exports.getMenuItems = (req, res) => __awaiter(void 0, void 0, void 0, function*
         return res.status(500).json({ error: error.message });
     }
 });
+exports.getMenuItems = getMenuItems;

@@ -12,36 +12,38 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const driverController_1 = require("../controller/driverController");
 const express_validator_1 = require("express-validator");
-const router = express_1.Router();
+const router = (0, express_1.Router)();
 router.post('/register', [
-    express_validator_1.body('name').notEmpty(),
-    express_validator_1.body('vehicle').notEmpty(),
-    express_validator_1.body('licenseNumber').isLength({ min: 5 }),
-    express_validator_1.body('workerId').notEmpty() // Validate workerId
+    (0, express_validator_1.body)('name').notEmpty().withMessage('Name is required'),
+    (0, express_validator_1.body)('vehicle').notEmpty().withMessage('Vehicle is required'),
+    (0, express_validator_1.body)('licenseNumber').isLength({ min: 5 }).withMessage('License number must be at least 5 characters long'),
+    (0, express_validator_1.body)('workerId').notEmpty().withMessage('Worker ID is required'),
+    (0, express_validator_1.body)('latitude').optional().isFloat({ min: -90, max: 90 }).withMessage('Latitude must be a valid number between -90 and 90'),
+    (0, express_validator_1.body)('longitude').optional().isFloat({ min: -180, max: 180 }).withMessage('Longitude must be a valid number between -180 and 180'),
 ], (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const errors = express_validator_1.validationResult(req);
+    const errors = (0, express_validator_1.validationResult)(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
     }
     try {
-        const workerId = req.body.workerId; // Get workerId from req.body
-        const driver = yield driverController_1.registerDriver(req.body, workerId); // Pass workerId
-        return res.status(201).json(driver); // Explicitly return after sending the response
+        const { name, vehicle, licenseNumber, workerId, latitude, longitude } = req.body;
+        // Pass the latitude and longitude as optional fields
+        const driver = yield (0, driverController_1.registerDriver)({ name, vehicle, licenseNumber, latitude, longitude }, workerId);
+        return res.status(201).json(driver);
     }
     catch (error) {
-        return res.status(400).json({ message: error.message }); // Explicitly return after sending the response
+        return res.status(400).json({ message: error.message });
     }
 }));
-router.get('/:id', express_validator_1.param('id').isUUID(), // Validate ID as UUID
-(req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const errors = express_validator_1.validationResult(req);
+router.get('/:id', (0, express_validator_1.param)('id').isUUID().withMessage('Invalid driver ID'), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const errors = (0, express_validator_1.validationResult)(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
     }
     try {
-        const driverId = req.params.id; // Use ID as a string
-        const driver = yield driverController_1.getDriver(driverId); // Pass the ID as a string
-        return res.status(200).json(driver); // Explicitly return after sending the response
+        const driverId = req.params.id;
+        const driver = yield (0, driverController_1.getDriver)(driverId);
+        return res.status(200).json(driver);
     }
     catch (error) {
         return res.status(400).json({ message: error.message });

@@ -12,35 +12,35 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const bookingrideController_1 = require("../controller/bookingrideController");
 const express_validator_1 = require("express-validator");
-const router = express_1.Router();
+const router = (0, express_1.Router)();
 router.post('/create', [
-    express_validator_1.check('userId').isUUID(),
-    express_validator_1.check('driverId').isUUID(),
-    express_validator_1.check('pickupLocation').notEmpty(),
-    express_validator_1.check('dropoffLocation').notEmpty(),
-    express_validator_1.check('status').isIn(['PENDING', 'ONGOING', 'COMPLETED']),
+    (0, express_validator_1.check)('userId').isUUID(),
+    (0, express_validator_1.check)('driverId').isUUID(),
+    (0, express_validator_1.check)('pickupLocation').notEmpty(),
+    (0, express_validator_1.check)('dropoffLocation').notEmpty(),
+    (0, express_validator_1.check)('status').isIn(['PENDING', 'ONGOING', 'COMPLETED']),
 ], (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const errors = express_validator_1.validationResult(req);
+    const errors = (0, express_validator_1.validationResult)(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
     }
     try {
-        const booking = yield bookingrideController_1.createBooking(req.body);
+        const booking = yield (0, bookingrideController_1.createBooking)(req.body);
         return res.status(201).json(booking); // Add 'return' here
     }
     catch (error) {
         return res.status(400).json({ message: error.message }); // Ensure 'return' is used
     }
 }));
-router.get('/:id', express_validator_1.param('id').isInt(), // Ensure that the id is an integer
+router.get('/:id', (0, express_validator_1.param)('id').isInt(), // Ensure that the id is an integer
 (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const errors = express_validator_1.validationResult(req);
+    const errors = (0, express_validator_1.validationResult)(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
     }
     try {
         const bookingId = parseInt(req.params.id, 10); // Convert id from string to number
-        const booking = yield bookingrideController_1.getBooking(bookingId);
+        const booking = yield (0, bookingrideController_1.getBooking)(bookingId);
         return res.status(200).json(booking); // Add 'return' here
     }
     catch (error) {

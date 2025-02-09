@@ -9,10 +9,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.cancelBooking = exports.bookRoom = exports.getAvailableRooms = void 0;
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
 // Get available rooms
-exports.getAvailableRooms = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getAvailableRooms = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const rooms = yield prisma.room.findMany({ where: { availability: true } });
         return res.json(rooms);
@@ -21,8 +22,9 @@ exports.getAvailableRooms = (req, res) => __awaiter(void 0, void 0, void 0, func
         return res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+exports.getAvailableRooms = getAvailableRooms;
 // Book a room
-exports.bookRoom = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const bookRoom = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { roomId, startDate, endDate } = req.body;
     const userId = req.user.id;
     try {
@@ -48,14 +50,15 @@ exports.bookRoom = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         return res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+exports.bookRoom = bookRoom;
 // Cancel a booking
-exports.cancelBooking = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const cancelBooking = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { bookingId } = req.body;
     const userId = req.user.id;
     try {
         const booking = yield prisma.booking.findUnique({
             where: { id: bookingId },
-            include: { Room: true },
+            include: { Room: true }, // Use the correct model name
         });
         if (!booking || booking.userId !== userId) {
             return res.status(400).json({ error: 'Invalid booking' });
@@ -71,3 +74,4 @@ exports.cancelBooking = (req, res) => __awaiter(void 0, void 0, void 0, function
         return res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+exports.cancelBooking = cancelBooking;

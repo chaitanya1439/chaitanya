@@ -9,63 +9,83 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.getETA = exports.calculateETA = exports.trackRider = exports.trackDriver = void 0;
 const client_1 = require("@prisma/client");
 const calculateDistance_1 = require("../utils/calculateDistance");
 const prisma = new client_1.PrismaClient();
-function trackDriver(driverId, latitude, longitude) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            // Check if the driver exists
-            const driver = yield prisma.driver.findUnique({
-                where: { id: driverId },
-            });
-            if (!driver) {
-                throw new Error('Driver not found');
-            }
-            // Update driver location
-            return yield prisma.driver.update({
-                where: { id: driverId },
-                data: { latitude, longitude },
-            });
+// Track driver location and update in the database
+const trackDriver = (driverId, latitude, longitude) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // Check if the driver exists
+        const driver = yield prisma.driver.findUnique({
+            where: { id: driverId },
+        });
+        if (!driver) {
+            throw new Error('Driver not found');
         }
-        catch (error) {
-            throw new Error(error.message || 'An error occurred while updating driver location');
-        }
-    });
-}
+        // Update driver location in the database
+        const updatedDriver = yield prisma.driver.update({
+            where: { id: driverId },
+            data: { latitude, longitude },
+        });
+        return updatedDriver;
+    }
+    catch (error) {
+        // Improved error handling
+        console.error('Error updating driver location:', error);
+        throw new Error(error instanceof Error ? error.message : 'An unknown error occurred while updating driver location');
+    }
+});
 exports.trackDriver = trackDriver;
-function trackRider(riderId, latitude, longitude) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            // Check if the rider exists
-            const rider = yield prisma.user.findUnique({
-                where: { id: riderId },
-            });
-            if (!rider) {
-                throw new Error('Rider not found');
-            }
-            // Update rider location
-            return yield prisma.user.update({
-                where: { id: riderId },
-                data: { latitude, longitude },
-            });
+// Track rider location and update in the database
+const trackRider = (riderId, latitude, longitude) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // Check if the rider exists
+        const rider = yield prisma.user.findUnique({
+            where: { id: riderId },
+        });
+        if (!rider) {
+            throw new Error('Rider not found');
         }
-        catch (error) {
-            throw new Error(error.message || 'An error occurred while updating rider location');
-        }
-    });
-}
+        // Update rider location in the database
+        const updatedRider = yield prisma.user.update({
+            where: { id: riderId },
+            data: { latitude, longitude },
+        });
+        return updatedRider;
+    }
+    catch (error) {
+        // Improved error handling
+        console.error('Error updating rider location:', error);
+        throw new Error(error instanceof Error ? error.message : 'An unknown error occurred while updating rider location');
+    }
+});
 exports.trackRider = trackRider;
-function calculateETA(pickupLat, pickupLong, dropoffLat, dropoffLong) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const distance = calculateDistance_1.calculateDistance(pickupLat, pickupLong, dropoffLat, dropoffLong);
-            const averageSpeed = 50; // Average speed in km/h
-            return Math.ceil((distance / averageSpeed) * 60); // ETA in minutes
-        }
-        catch (error) {
-            throw new Error('An error occurred while calculating ETA');
-        }
-    });
-}
+// Calculate ETA based on distance and average speed
+const calculateETA = (pickupLat, pickupLong, dropoffLat, dropoffLong) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const distance = (0, calculateDistance_1.calculateDistance)(pickupLat, pickupLong, dropoffLat, dropoffLong);
+        const averageSpeed = 50; // Assume an average speed in km/h
+        const etaInMinutes = Math.ceil((distance / averageSpeed) * 60); // ETA in minutes
+        return etaInMinutes;
+    }
+    catch (error) {
+        // Improved error handling
+        console.error('Error calculating ETA:', error);
+        throw new Error(error instanceof Error ? 'Error calculating ETA: ' + error.message : 'An unknown error occurred while calculating ETA');
+    }
+});
 exports.calculateETA = calculateETA;
+// Get ETA from Google Maps API
+const getETA = (pickupLat, pickupLong, dropoffLat, dropoffLong) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const etaInMinutes = yield (0, calculateDistance_1.getETAFromGoogle)(pickupLat, pickupLong, dropoffLat, dropoffLong);
+        return etaInMinutes;
+    }
+    catch (error) {
+        // Improved error handling
+        console.error('Error fetching ETA from Google Maps API:', error);
+        throw new Error(error instanceof Error ? 'Error fetching ETA from Google Maps API: ' + error.message : 'An unknown error occurred while fetching ETA from Google Maps API');
+    }
+});
+exports.getETA = getETA;

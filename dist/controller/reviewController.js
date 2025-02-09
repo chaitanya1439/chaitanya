@@ -9,10 +9,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.createReview = exports.getReviewsForRoom = void 0;
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
 // Get all reviews for a room
-exports.getReviewsForRoom = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getReviewsForRoom = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { roomId } = req.params;
     try {
         const reviews = yield prisma.review.findMany({
@@ -25,8 +26,9 @@ exports.getReviewsForRoom = (req, res) => __awaiter(void 0, void 0, void 0, func
         return res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+exports.getReviewsForRoom = getReviewsForRoom;
 // Create review
-exports.createReview = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const createReview = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { roomId, rating, comment } = req.body;
     const userId = req.user.id;
     try {
@@ -44,3 +46,4 @@ exports.createReview = (req, res) => __awaiter(void 0, void 0, void 0, function*
         return res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+exports.createReview = createReview;

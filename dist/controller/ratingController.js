@@ -9,9 +9,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.getRatings = exports.submitRating = void 0;
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
-exports.submitRating = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const submitRating = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const { rateeId, rating, comment } = req.body;
     const raterId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
@@ -41,13 +42,14 @@ exports.submitRating = (req, res) => __awaiter(void 0, void 0, void 0, function*
         return res.status(500).json({ error: error.message });
     }
 });
-exports.getRatings = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.submitRating = submitRating;
+const getRatings = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { userId } = req.params;
     try {
         const ratings = yield prisma.rating.findMany({
             where: { rateeId: (userId) },
             include: {
-                rater: true,
+                rater: true, // Include rater details if needed
             },
         });
         return res.status(200).json(ratings);
@@ -56,3 +58,4 @@ exports.getRatings = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         return res.status(500).json({ error: error.message });
     }
 });
+exports.getRatings = getRatings;

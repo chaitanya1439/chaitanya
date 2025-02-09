@@ -9,10 +9,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.updateFacility = exports.getFacilities = void 0;
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
 // Get all facilities
-exports.getFacilities = (res) => __awaiter(void 0, void 0, void 0, function* () {
+const getFacilities = (res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const facilities = yield prisma.facility.findMany();
         return res.json(facilities);
@@ -21,8 +22,9 @@ exports.getFacilities = (res) => __awaiter(void 0, void 0, void 0, function* () 
         return res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+exports.getFacilities = getFacilities;
 // Update facility information
-exports.updateFacility = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const updateFacility = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.params;
     const { name, description } = req.body;
     try {
@@ -36,3 +38,4 @@ exports.updateFacility = (req, res) => __awaiter(void 0, void 0, void 0, functio
         return res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+exports.updateFacility = updateFacility;

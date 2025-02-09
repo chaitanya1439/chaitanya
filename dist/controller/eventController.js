@@ -9,10 +9,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.updateEvent = exports.getEvents = void 0;
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
 // Get all events
-exports.getEvents = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getEvents = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const events = yield prisma.event.findMany();
         return res.json(events);
@@ -21,8 +22,9 @@ exports.getEvents = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         return res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+exports.getEvents = getEvents;
 // Update event information
-exports.updateEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const updateEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.params;
     const { name, description, date, roomId } = req.body;
     try {
@@ -36,3 +38,4 @@ exports.updateEvent = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         return res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+exports.updateEvent = updateEvent;

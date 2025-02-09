@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.authMiddleware = exports.authenticate = void 0;
 const passport_1 = __importDefault(require("passport"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -10,7 +11,7 @@ if (!JWT_SECRET) {
     throw new Error('JWT_SECRET is not defined in the environment variables');
 }
 // Middleware for JWT authentication using Passport
-exports.authenticate = (req, res, next) => {
+const authenticate = (req, res, next) => {
     passport_1.default.authenticate('jwt', { session: false }, (err, user) => {
         if (err) {
             console.error('Authentication error:', err);
@@ -23,8 +24,9 @@ exports.authenticate = (req, res, next) => {
         next();
     })(req, res, next);
 };
+exports.authenticate = authenticate;
 // Middleware for token verification and attachment of user ID
-exports.authMiddleware = (req, res, next) => {
+const authMiddleware = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     if (!authHeader) {
         return res.status(403).json({ message: 'Authorization header is missing' });
@@ -48,3 +50,4 @@ exports.authMiddleware = (req, res, next) => {
         return res.status(403).json({ message: 'Token verification failed' });
     }
 };
+exports.authMiddleware = authMiddleware;

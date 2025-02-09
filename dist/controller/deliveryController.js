@@ -9,9 +9,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.getDeliveries = exports.updateDeliveryStatus = exports.assignDelivery = void 0;
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
-exports.assignDelivery = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const assignDelivery = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { orderId, deliveryPersonnelId } = req.body;
     try {
         const delivery = yield prisma.delivery.create({
@@ -27,7 +28,8 @@ exports.assignDelivery = (req, res) => __awaiter(void 0, void 0, void 0, functio
         res.status(500).json({ error: error.message });
     }
 });
-exports.updateDeliveryStatus = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.assignDelivery = assignDelivery;
+const updateDeliveryStatus = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { deliveryId, status, location } = req.body;
     try {
         const delivery = yield prisma.delivery.update({
@@ -40,7 +42,8 @@ exports.updateDeliveryStatus = (req, res) => __awaiter(void 0, void 0, void 0, f
         res.status(500).json({ error: error.message });
     }
 });
-exports.getDeliveries = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.updateDeliveryStatus = updateDeliveryStatus;
+const getDeliveries = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const deliveries = yield prisma.delivery.findMany({
             include: {
@@ -54,3 +57,4 @@ exports.getDeliveries = (req, res) => __awaiter(void 0, void 0, void 0, function
         res.status(500).json({ error: error.message });
     }
 });
+exports.getDeliveries = getDeliveries;

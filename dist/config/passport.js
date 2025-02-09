@@ -12,6 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.generateToken = void 0;
 const passport_1 = __importDefault(require("passport"));
 const passport_local_1 = require("passport-local");
 const passport_google_oauth2_1 = require("passport-google-oauth2");
@@ -44,14 +45,20 @@ passport_1.default.use(new passport_local_1.Strategy({
         return done(null, userWithToken);
     }
     catch (err) {
-        console.error('Error in LocalStrategy:', err);
-        return done(err);
+        if (err instanceof Error) {
+            console.error('Error in LocalStrategy:', err);
+            return done(err);
+        }
+        else {
+            return done(new Error('An unknown error occurred'));
+        }
     }
 })));
+// Google Strategy for OAuth2 authentication
 passport_1.default.use(new passport_google_oauth2_1.Strategy({
     clientID: GOOGLE_CLIENT_ID,
     clientSecret: GOOGLE_CLIENT_SECRET,
-    callbackURL: "http://localhost:3000/home",
+    callbackURL: process.env.NODE_ENV === 'production' ? "https://www.shelteric.com" : "http://localhost:3000/home",
     scope: ['profile', 'email'],
 }, (_accessToken, _refreshToken, profile, done) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
@@ -61,7 +68,7 @@ passport_1.default.use(new passport_google_oauth2_1.Strategy({
             const newUser = yield prisma.user.create({
                 data: {
                     email: ((_b = profile.emails) === null || _b === void 0 ? void 0 : _b[0].value) || '',
-                    password: 'google',
+                    password: 'google', // Password should be handled properly in production
                 },
             });
             return done(null, newUser);
@@ -71,8 +78,13 @@ passport_1.default.use(new passport_google_oauth2_1.Strategy({
         }
     }
     catch (err) {
-        console.error('Error in GoogleStrategy:', err);
-        return done(err, false);
+        if (err instanceof Error) {
+            console.error('Error in GoogleStrategy:', err);
+            return done(err, false);
+        }
+        else {
+            return done(new Error('An unknown error occurred'), false);
+        }
     }
 })));
 // Serialize user for session
@@ -84,15 +96,21 @@ passport_1.default.deserializeUser((id, done) => __awaiter(void 0, void 0, void 
     try {
         const user = yield prisma.user.findUnique({ where: { id } });
         if (user) {
-            done(null, user);
+            const userWithToken = Object.assign(Object.assign({}, user), { token: jsonwebtoken_1.default.sign({ id: user.id }, JWT_SECRET, { expiresIn: '1h' }) });
+            done(null, userWithToken);
         }
         else {
             done(null, false);
         }
     }
     catch (err) {
-        console.error('Error in deserializeUser:', err);
-        done(err);
+        if (err instanceof Error) {
+            console.error('Error in deserializeUser:', err);
+            done(err);
+        }
+        else {
+            done(new Error('An unknown error occurred'));
+        }
     }
 }));
 // JWT Strategy for token authentication
@@ -110,11 +128,18 @@ passport_1.default.use(new passport_jwt_1.Strategy({
         }
     }
     catch (err) {
-        console.error('Error in JwtStrategy:', err);
-        return done(err, false);
+        if (err instanceof Error) {
+            console.error('Error in JwtStrategy:', err);
+            return done(err, false);
+        }
+        else {
+            return done(new Error('An unknown error occurred'), false);
+        }
     }
 })));
-exports.generateToken = (user) => {
+// Export a function to generate JWT tokens
+const generateToken = (user) => {
     return jsonwebtoken_1.default.sign({ id: user.id }, JWT_SECRET, { expiresIn: '1h' });
 };
+exports.generateToken = generateToken;
 exports.default = passport_1.default;

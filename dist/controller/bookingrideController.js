@@ -9,6 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.getBooking = exports.createBooking = void 0;
 const client_1 = require("@prisma/client");
 const zod_1 = require("zod");
 const prisma = new client_1.PrismaClient();
@@ -18,7 +19,7 @@ const bookingSchema = zod_1.z.object({
     startDate: zod_1.z.date(),
     endDate: zod_1.z.date(),
 });
-exports.createBooking = (data) => __awaiter(void 0, void 0, void 0, function* () {
+const createBooking = (data) => __awaiter(void 0, void 0, void 0, function* () {
     const parsedData = bookingSchema.safeParse(data);
     if (!parsedData.success) {
         throw new Error('Validation failed: ' + parsedData.error.errors.map(e => e.message).join(', '));
@@ -33,10 +34,12 @@ exports.createBooking = (data) => __awaiter(void 0, void 0, void 0, function* ()
     });
     return booking;
 });
-exports.getBooking = (id) => __awaiter(void 0, void 0, void 0, function* () {
+exports.createBooking = createBooking;
+const getBooking = (id) => __awaiter(void 0, void 0, void 0, function* () {
     const booking = yield prisma.booking.findUnique({ where: { id } });
     if (!booking) {
         throw new Error('Booking not found');
     }
     return booking;
 });
+exports.getBooking = getBooking;

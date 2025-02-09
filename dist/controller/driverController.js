@@ -9,6 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.getDriver = exports.registerDriver = void 0;
 const client_1 = require("@prisma/client");
 const zod_1 = require("zod");
 const prisma = new client_1.PrismaClient();
@@ -26,7 +27,7 @@ const validateUUID = (id) => {
     return uuidRegex.test(id);
 };
 // Function to register a new driver
-exports.registerDriver = (data, workerId) => __awaiter(void 0, void 0, void 0, function* () {
+const registerDriver = (data, workerId) => __awaiter(void 0, void 0, void 0, function* () {
     // Validate the input data using Zod
     const parsedData = driverSchema.parse(data); // Use parse instead of safeParse to ensure all required fields are present
     // Validate the workerId
@@ -57,8 +58,9 @@ exports.registerDriver = (data, workerId) => __awaiter(void 0, void 0, void 0, f
     });
     return driver;
 });
+exports.registerDriver = registerDriver;
 // Function to retrieve a driver by ID
-exports.getDriver = (id) => __awaiter(void 0, void 0, void 0, function* () {
+const getDriver = (id) => __awaiter(void 0, void 0, void 0, function* () {
     // Validate the ID
     if (!validateUUID(id)) {
         throw new Error(`Invalid driver ID: ${id}`);
@@ -69,3 +71,4 @@ exports.getDriver = (id) => __awaiter(void 0, void 0, void 0, function* () {
     }
     return driver;
 });
+exports.getDriver = getDriver;

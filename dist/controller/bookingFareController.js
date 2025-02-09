@@ -9,6 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.createBooking = void 0;
 const fareService_1 = require("../services/fareService");
 const client_1 = require("@prisma/client");
 const zod_1 = require("zod");
@@ -32,7 +33,7 @@ function createBooking(req, res) {
         try {
             let fare = null;
             if (distance !== undefined && demand !== undefined && surgeFactor !== undefined) {
-                fare = yield fareService_1.calculateFare({ distance, demand, surgeFactor });
+                fare = yield (0, fareService_1.calculateFare)({ distance, demand, surgeFactor });
             }
             // Create booking record
             const booking = yield prisma.booking.create({

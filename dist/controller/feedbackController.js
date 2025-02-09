@@ -9,10 +9,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.createFeedback = exports.getFeedbacks = void 0;
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
 // Get all feedback
-exports.getFeedbacks = (res) => __awaiter(void 0, void 0, void 0, function* () {
+const getFeedbacks = (res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const feedbacks = yield prisma.feedback.findMany({
             include: { User: true },
@@ -23,8 +24,9 @@ exports.getFeedbacks = (res) => __awaiter(void 0, void 0, void 0, function* () {
         return res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+exports.getFeedbacks = getFeedbacks;
 // Create feedback
-exports.createFeedback = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const createFeedback = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { content } = req.body;
     const userId = req.user.id;
     try {
@@ -40,3 +42,4 @@ exports.createFeedback = (req, res) => __awaiter(void 0, void 0, void 0, functio
         return res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+exports.createFeedback = createFeedback;
