@@ -1,0 +1,23 @@
+{
+    "version": 2,
+    "buildCommand": "npx prisma generate && tsc",
+    "outputDirectory": "dist",
+    "builds": [
+      {
+        "src": "src/**/*.ts",
+        "use": "@vercel/node"
+      }
+    ],
+    "routes": [
+      {
+        "src": "/(.*)",
+        "dest": "src/index.ts"
+      }
+    ],
+    "functions": {
+      "src/index.ts": {
+        "includeFiles": "prisma/schema.prisma"
+      }
+    }
+  }
+  
