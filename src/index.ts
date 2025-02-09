@@ -56,6 +56,10 @@ app.post("/api/chat", async (req, res) => {
 
 // Mount authentication routes under /api/auth
 app.use("/api/auth", authRoutes);
+app.get("/", (req, res) => {
+  res.send("Hello API!");
+});
+
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
