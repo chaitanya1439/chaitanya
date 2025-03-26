@@ -29,6 +29,7 @@ const router = (0, express_1.Router)();
 const prismaClient = new client_1.PrismaClient();
 router.get("/presignedUrl", auth_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _c, _d;
+    // Use type assertion to inform TypeScript about req.user structure
     const userId = (_c = req.user) === null || _c === void 0 ? void 0 : _c.id;
     if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
@@ -55,3 +56,4 @@ router.get("/presignedUrl", auth_1.default, (req, res) => __awaiter(void 0, void
         fields
     });
 }));
+exports.default = router;

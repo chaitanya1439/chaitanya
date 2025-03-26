@@ -27,7 +27,7 @@ const groq = new groq_sdk_1.default({
 });
 // Define the system prompt function
 function getSystemPrompt() {
-    return "You are a helpful AI assistant. Respond concisely and accurately.";
+    return "You are a helpful AI assistant of shelteric.com. Respond concisely and accurately.";
 }
 // Chat API route
 app.post("/api/chat", (req, res) => __awaiter(void 0, void 0, void 0, function* () {

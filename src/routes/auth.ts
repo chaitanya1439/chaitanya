@@ -7,10 +7,15 @@ import { Strategy as LocalStrategy } from 'passport-local';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth2';
 import authMiddleware from '../middleware/auth';
 import cookie from 'cookie';
+import { parsePhoneNumberFromString } from 'libphonenumber-js';
+import twilio from 'twilio';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || 'your_google_client_id';
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || 'your_google_client_secret';
+const TWILIO_SID = process.env.TWILIO_SID || 'your_twilio_sid';
+const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN || 'your_twilio_auth_token';
+const TWILIO_PHONE = process.env.TWILIO_PHONE || 'your_twilio_phone';
 
 const prisma = new PrismaClient();
 const router = Router();
@@ -21,8 +26,12 @@ interface AuthUser {
   username: string;
   name: string;
   password: string;
+  phoneNumber: string;
 }
-
+export function isValidPhoneNumber(phone: string): boolean {
+  const phoneNumber = parsePhoneNumberFromString(phone);
+  return phoneNumber ? phoneNumber.isValid() : false;
+}
 // Extend Express.User so that req.user is correctly typed.
 declare global {
   namespace Express {
@@ -69,7 +78,7 @@ passport.use(
     {
       clientID: GOOGLE_CLIENT_ID,
       clientSecret: GOOGLE_CLIENT_SECRET,
-      callbackURL: 'http://localhost:3000/home',
+      callbackURL: 'http://localhost:3001',
     },
     async (
       accessToken: string,
@@ -90,7 +99,8 @@ passport.use(
             data: {
               name: profile.displayName,
               username: email,
-              password: '', // No password required for OAuth users.
+              password: '', 
+              phoneNumber: '',
             },
           });
         }
@@ -123,9 +133,12 @@ passport.deserializeUser(
 // Signup Route
 router.post('/signup', async (req: Request, res: Response) => {
   try {
-    const { name, username, password } = req.body;
-    if (!name || !username || !password) {
+    const { name, username, password,  phoneNumber } = req.body;
+    if (!name || !username || !password || !phoneNumber) {
       return res.status(400).json({ message: 'Missing fields' });
+    }
+    if (!isValidPhoneNumber(phoneNumber)) {
+      return res.status(400).json({ message: 'Invalid phone number format' });
     }
 
     const existingUser = await prisma.user.findUnique({ where: { username } });
@@ -135,7 +148,7 @@ router.post('/signup', async (req: Request, res: Response) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
-      data: { name, username, password: hashedPassword },
+      data: { name, username, password: hashedPassword,  phoneNumber },
     });
 
     const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, {
@@ -195,7 +208,11 @@ router.get(
       })
     );
     // Redirect to the home page
-    res.redirect('http://localhost:3000/home');
+    const redirectUrl = process.env.NODE_ENV === 'production'
+  ? 'https://www.shelteric.com/home'
+  : 'http://localhost:3000/home';
+res.redirect(redirectUrl);
+
   }
 );
 // Get Current User
@@ -246,5 +263,86 @@ router.post(
     }
   }
 );
+router.post('/send-otp', async (req: Request, res: Response) => {
+  try {
+    const { phoneNumber } = req.body;
+
+    if (!phoneNumber) {
+      return res.status(400).json({ message: 'Phone number is required' });
+    }
+
+    // Validate phone number format
+    if (!isValidPhoneNumber(phoneNumber)) {
+      return res.status(400).json({ message: 'Invalid phone number format' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { phoneNumber } });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Generate a random 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // OTP expires in 10 minutes
+
+    // Store OTP in the User model
+    await prisma.user.update({
+      where: { phoneNumber },
+      data: { otp, otpExpiresAt: expiresAt },
+    });
+
+    // Send OTP via Twilio
+    const twilioClient = twilio(TWILIO_SID, TWILIO_AUTH_TOKEN);
+    await twilioClient.messages.create({
+      body: `Your verification code is: ${otp}`,
+      from: TWILIO_PHONE,
+      to: phoneNumber,
+    });
+
+    res.json({ message: 'OTP sent successfully' });
+  } catch (error) {
+    console.error('Error sending OTP:', error);
+    res.status(500).json({ message: 'Failed to send OTP' });
+  }
+});
+
+// Verify OTP and Change Password
+router.post('/verify-otp', async (req: Request, res: Response) => {
+  try {
+    const { phoneNumber, otp, newPassword } = req.body;
+
+    if (!phoneNumber || !otp || !newPassword) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    // Find user by phone number
+    const user = await prisma.user.findUnique({ where: { phoneNumber } });
+
+    if (!user || user.otp !== otp) {
+      return res.status(400).json({ message: 'Invalid OTP' });
+    }
+
+    // Check if OTP has expired
+    if (!user.otpExpiresAt || new Date() > user.otpExpiresAt) {
+      return res.status(400).json({ message: 'OTP has expired' });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update user's password and clear OTP fields
+    await prisma.user.update({
+      where: { phoneNumber },
+      data: { password: hashedPassword, otp: null, otpExpiresAt: null },
+    });
+
+    res.json({ message: 'Password changed successfully' });
+  } catch (error) {
+    console.error('Error verifying OTP:', error);
+    res.status(500).json({ message: 'Failed to verify OTP' });
+  }
+});
+
 
 export default router;

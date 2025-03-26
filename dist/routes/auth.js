@@ -12,6 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.isValidPhoneNumber = void 0;
 const express_1 = require("express");
 const client_1 = require("@prisma/client");
 const bcrypt_1 = __importDefault(require("bcrypt"));
@@ -21,11 +22,21 @@ const passport_local_1 = require("passport-local");
 const passport_google_oauth2_1 = require("passport-google-oauth2");
 const auth_1 = __importDefault(require("../middleware/auth"));
 const cookie_1 = __importDefault(require("cookie"));
+const libphonenumber_js_1 = require("libphonenumber-js");
+const twilio_1 = __importDefault(require("twilio"));
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || 'your_google_client_id';
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || 'your_google_client_secret';
+const TWILIO_SID = process.env.TWILIO_SID || 'your_twilio_sid';
+const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN || 'your_twilio_auth_token';
+const TWILIO_PHONE = process.env.TWILIO_PHONE || 'your_twilio_phone';
 const prisma = new client_1.PrismaClient();
 const router = (0, express_1.Router)();
+function isValidPhoneNumber(phone) {
+    const phoneNumber = (0, libphonenumber_js_1.parsePhoneNumberFromString)(phone);
+    return phoneNumber ? phoneNumber.isValid() : false;
+}
+exports.isValidPhoneNumber = isValidPhoneNumber;
 // Passport Local Strategy
 passport_1.default.use(new passport_local_1.Strategy({ usernameField: 'username' }, (username, password, done) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -51,7 +62,7 @@ passport_1.default.use(new passport_local_1.Strategy({ usernameField: 'username'
 passport_1.default.use(new passport_google_oauth2_1.Strategy({
     clientID: GOOGLE_CLIENT_ID,
     clientSecret: GOOGLE_CLIENT_SECRET,
-    callbackURL: 'http://localhost:3000/home',
+    callbackURL: 'http://localhost:3001',
 }, (accessToken, refreshToken, profile, // using any because the Profile type is not exported
 done) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
@@ -67,7 +78,8 @@ done) => __awaiter(void 0, void 0, void 0, function* () {
                 data: {
                     name: profile.displayName,
                     username: email,
-                    password: '', // No password required for OAuth users.
+                    password: '',
+                    phoneNumber: '',
                 },
             });
         }
@@ -96,9 +108,12 @@ passport_1.default.deserializeUser((id, done) => __awaiter(void 0, void 0, void 
 // Signup Route
 router.post('/signup', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { name, username, password } = req.body;
-        if (!name || !username || !password) {
+        const { name, username, password, phoneNumber } = req.body;
+        if (!name || !username || !password || !phoneNumber) {
             return res.status(400).json({ message: 'Missing fields' });
+        }
+        if (!isValidPhoneNumber(phoneNumber)) {
+            return res.status(400).json({ message: 'Invalid phone number format' });
         }
         const existingUser = yield prisma.user.findUnique({ where: { username } });
         if (existingUser) {
@@ -106,7 +121,7 @@ router.post('/signup', (req, res) => __awaiter(void 0, void 0, void 0, function*
         }
         const hashedPassword = yield bcrypt_1.default.hash(password, 10);
         const user = yield prisma.user.create({
-            data: { name, username, password: hashedPassword },
+            data: { name, username, password: hashedPassword, phoneNumber },
         });
         const token = jsonwebtoken_1.default.sign({ id: user.id, username: user.username }, JWT_SECRET, {
             expiresIn: '1h',
@@ -149,7 +164,10 @@ router.get('/google/callback', passport_1.default.authenticate('google', { sessi
         path: '/',
     }));
     // Redirect to the home page
-    res.redirect('http://localhost:3000/home');
+    const redirectUrl = process.env.NODE_ENV === 'production'
+        ? 'https://www.shelteric.com/home'
+        : 'http://localhost:3000/home';
+    res.redirect(redirectUrl);
 });
 // Get Current User
 router.get('/me', auth_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -191,6 +209,72 @@ router.post('/location', passport_1.default.authenticate('jwt', { session: false
     catch (error) {
         console.error('Error updating location:', error);
         res.status(500).json({ error: 'Internal Server Error' });
+    }
+}));
+router.post('/send-otp', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { phoneNumber } = req.body;
+        if (!phoneNumber) {
+            return res.status(400).json({ message: 'Phone number is required' });
+        }
+        // Validate phone number format
+        if (!isValidPhoneNumber(phoneNumber)) {
+            return res.status(400).json({ message: 'Invalid phone number format' });
+        }
+        const user = yield prisma.user.findUnique({ where: { phoneNumber } });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        // Generate a random 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // OTP expires in 10 minutes
+        // Store OTP in the User model
+        yield prisma.user.update({
+            where: { phoneNumber },
+            data: { otp, otpExpiresAt: expiresAt },
+        });
+        // Send OTP via Twilio
+        const twilioClient = (0, twilio_1.default)(TWILIO_SID, TWILIO_AUTH_TOKEN);
+        yield twilioClient.messages.create({
+            body: `Your verification code is: ${otp}`,
+            from: TWILIO_PHONE,
+            to: phoneNumber,
+        });
+        res.json({ message: 'OTP sent successfully' });
+    }
+    catch (error) {
+        console.error('Error sending OTP:', error);
+        res.status(500).json({ message: 'Failed to send OTP' });
+    }
+}));
+// Verify OTP and Change Password
+router.post('/verify-otp', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { phoneNumber, otp, newPassword } = req.body;
+        if (!phoneNumber || !otp || !newPassword) {
+            return res.status(400).json({ message: 'All fields are required' });
+        }
+        // Find user by phone number
+        const user = yield prisma.user.findUnique({ where: { phoneNumber } });
+        if (!user || user.otp !== otp) {
+            return res.status(400).json({ message: 'Invalid OTP' });
+        }
+        // Check if OTP has expired
+        if (!user.otpExpiresAt || new Date() > user.otpExpiresAt) {
+            return res.status(400).json({ message: 'OTP has expired' });
+        }
+        // Hash new password
+        const hashedPassword = yield bcrypt_1.default.hash(newPassword, 10);
+        // Update user's password and clear OTP fields
+        yield prisma.user.update({
+            where: { phoneNumber },
+            data: { password: hashedPassword, otp: null, otpExpiresAt: null },
+        });
+        res.json({ message: 'Password changed successfully' });
+    }
+    catch (error) {
+        console.error('Error verifying OTP:', error);
+        res.status(500).json({ message: 'Failed to verify OTP' });
     }
 }));
 exports.default = router;
