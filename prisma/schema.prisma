@@ -14,17 +14,60 @@ datasource db {
 }
 
 model User {
-  id          Int      @id @default(autoincrement())
-  name        String
-  username    String   @unique
-  password    String
-  phoneNumber String   @unique @db.VarChar(15) 
-  otp         String?  
-  otpExpiresAt DateTime?
+  id                Int       @id @default(autoincrement())
+  name              String
+  username          String    @unique
+  phoneNumber       String?   @unique
+  uid               String    @unique
+  currentLatitude   Float?
+  currentLongitude  Float?
+  notificationToken String?
+  ratings           Float     @default(0)
+  totalRides        Float     @default(0)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  rides             Ride[]    @relation("UserRides")
+}
 
-  currentLatitude  Float? 
-  currentLongitude Float?
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt()
+
+model Driver {
+  id                  String      @id 
+  name                String
+  country             String
+  phoneNumber         String?   @unique
+  email               String    @unique
+  vehicleType         String
+  registrationNumber  String    @unique
+  registrationDate    DateTime
+  drivingLicense      String
+  vehicleColor        String?
+  rate                Float
+  notificationToken   String?
+  ratings             Float     @default(0)
+  totalEarning        Float     @default(0)
+  totalRides          Float     @default(0)
+  pendingRides        Float     @default(0)
+  cancelRides         Float     @default(0)
+  status              String    @default("inactive")
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  rides               Ride[]    @relation("DriverRides")
+}
+
+model Ride {
+  id                      String      @id 
+  userId                  Int
+  driverId                String    
+  charge                  Float
+  currentLocationName     String
+  destinationLocationName String
+  distance                Float
+  status                  String
+  rating                  Float?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  user    User    @relation("UserRides", fields: [userId],   references: [id])
+  driver  Driver  @relation("DriverRides", fields: [driverId], references: [id])
 }

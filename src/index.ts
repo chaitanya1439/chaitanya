@@ -2,12 +2,23 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth";
+import workerRoutes from "./routes/worker";
 import Groq from "groq-sdk";
 
 dotenv.config();
 
 const app = express();
-app.use(cors());
+const FRONTEND_URL = [
+  process.env.FRONTEND_URL || 'http://localhost:3000',
+  'http://localhost:3002',
+];
+
+app.use(cors({
+  origin: FRONTEND_URL,
+  credentials: true,                // <-- Allow cookies/credentials
+  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization']
+}));
 app.use(express.json());
 
 // Initialize Groq client
@@ -56,6 +67,7 @@ app.post("/api/chat", async (req, res) => {
 
 // Mount authentication routes under /api/auth
 app.use("/api/auth", authRoutes);
+app.use("/api/worker", workerRoutes);
 app.get("/", (req, res) => {
   res.send("Hello API!");
 });
