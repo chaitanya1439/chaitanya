@@ -26,7 +26,7 @@ const FRONTEND_URL = [
 ];
 app.use((0, cors_1.default)({
     origin: FRONTEND_URL,
-    credentials: true,
+    credentials: true, // <-- Allow cookies/credentials
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
